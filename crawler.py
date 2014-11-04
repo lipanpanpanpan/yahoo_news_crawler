@@ -144,7 +144,7 @@ def parse_reply_comment(session, content_url, content_id, comment_id, comment_id
     for comment in reply_comment_list:
         span_nickname = comment.find('span', {'class':'int profile-link'})
         span_timestamp = comment.find('span', {'class':'comment-timestamp'})
-        p_comment_content = comment.find('p', {'class', 'comment-content'})
+        p_comment_content = comment.find('p', {'class': 'comment-content'})
         div_thumb_up = comment.find('div', {'id':'up-vote-box'})
         div_thumb_down = comment.find('div', {'id':'down-vote-box'})
         nickname = span_nickname.string

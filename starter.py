@@ -54,10 +54,10 @@ def visit_news_comment():
             param_dict = {'content_id':n_i.content_id, 'sortBy':'highestRated'}
             rurl = urlencode(comment_base_url, param_dict)
             if comment_num > 200 and n_i.comment_crawl_flag==0:
+                NewsHandler().set_news_crawl_flag(session, n_i.id, 1)
                 parse_comments(session, rurl, n_i.content_id, 0, n_i.id)
                 session.commit()
                 session.flush()
-                NewsHandler().set_news_crawl_flag(session, n_i.id, 1)
     except:
         traceback.print_exc()
         session.rollback()

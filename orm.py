@@ -10,7 +10,7 @@ Base = declarative_base()
 
 def get_session():
     engine = create_engine('mysql+mysqldb://bshi:20141031shib@seis10/bshi?charset=utf8', pool_recycle=1800, pool_size=20, encoding='utf-8')
-    Session = sessionmaker(bind=engine, expire_on_commit=False)
+    Session = sessionmaker(bind=engine)
     session = Session()
     return session
 
