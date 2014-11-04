@@ -37,6 +37,7 @@ def visit_news_mainpage():
             content_id = news_dict['content_id']
             ntime = news_dict['time']
             NewsHandler().insert_news(session, url, title, summary, content, ntime, 0, press_name, comment_num, content_id)
+    session.commit()
     except:
         traceback.print_exc() 
         session.rollback()
@@ -44,10 +45,10 @@ def visit_news_mainpage():
         session.close()
 
 def visit_news_comment():
-    session = get_session()
-    try:
-        l_news = NewsHandler().get_news_without_crawl_comment(session)
-        for n_i in l_news:
+    l_news = NewsHandler().get_news_without_crawl_comment(session)
+    for n_i in l_news:
+        try:
+            session = get_session()
             news_url = n_i.url
             comment_num = parse_comment_num(news_url)
             NewsHandler().update_comment_number(session, n_i.id, comment_num)
@@ -57,11 +58,10 @@ def visit_news_comment():
                 parse_comments(session, rurl, n_i.content_id, 0, n_i.id)
                 NewsHandler().set_news_crawl_flag(session, n_i.id, 1)
             session.commit()
-    except:
-        traceback.print_exc()
-        session.rollback()
-    finally:
-        session.close()
+        except:
+            traceback.print_exc()
+        finally:
+            session.close()
     
 if __name__=='__main__':
     while(True):
