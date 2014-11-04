@@ -43,6 +43,7 @@ class CommentHandler(object):
             n_comment = Comment(nick=nick, thumb_up=thumb_up, thumb_down=thumb_down, content=content, is_reply=is_reply, has_reply=has_reply, reply_comment_id=reply_comment_id, news_id=news_id)
             session.add(n_comment)
             session.commit()
+            session.flush()
             n_comment = session.query(Comment).filter((Comment.content==content) & (Comment.nick==nick) & (Comment.news_id==news_id)).first()
             return n_comment.id
         else:
