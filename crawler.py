@@ -97,7 +97,7 @@ def parse_comments(session, content_url, content_id, current_index, news_id):
                 comment_id = comment['data-cmt']
             span_nickname = comment.find('span', {'class':'int profile-link'})
             span_timestamp = comment.find('span', {'class':'comment-timestamp'})
-            p_comment_content = comment.find('p', {'class', 'comment-content'})
+            p_comment_content = comment.find('p', {'class': 'comment-content'})
             div_thumb_up = comment.find('div', {'id':'up-vote-box'})
             div_thumb_down = comment.find('div', {'id':'down-vote-box'})
             nickname = span_nickname.string
