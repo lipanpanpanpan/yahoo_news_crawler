@@ -52,12 +52,13 @@ def visit_news_comment():
         news_id = n_i['id']
         news_url = n_i['url']
         content_id = n_i['content_id']
+        comment_crawl_flag = n_i['comment_crawl_flag']
         try:
             comment_num = parse_comment_num(news_url)
             NewsHandler().update_comment_number(session2, news_id, comment_num)
             param_dict = {'content_id':content_id, 'sortBy':'highestRated'}
             rurl = urlencode(comment_base_url, param_dict)
-            if comment_num > 200 and n_i.comment_crawl_flag==0:
+            if comment_num > 200 and comment_crawl_flag==0:
                 parse_comments(session2, rurl, content_id, 0, news_id)
                 NewsHandler().set_news_crawl_flag(session1, news_id, 1)
             session1.commit()
