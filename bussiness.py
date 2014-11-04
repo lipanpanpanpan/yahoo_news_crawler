@@ -26,7 +26,7 @@ class NewsHandler(object):
             t_dict['url'] = item.url
             t_dict['comment_crawl_flag'] = item.comment_crawl_flag
             result_list.append(t_dict)
-        return news_list
+        return result_list
 
     def set_news_crawl_flag(self, session, id, flag=1):
         session.query(News).filter(News.id==id).update({News.comment_crawl_flag:flag})
