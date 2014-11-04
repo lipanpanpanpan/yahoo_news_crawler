@@ -7,7 +7,7 @@ class NewsHandler(object):
         if not t_news:
             n_news = News(url=url, title=title, summary=summary, content=content, time_text=time_text, comment_crawl_flag=comment_crawl_flag, press=press, comment_num=comment_num, content_id=content_id)
             session.add(n_news)
-            session.commit()
+            session.flush()
             n_news = session.query(News).filter(News.url==url).first()
             return n_news.id
         else:
@@ -19,11 +19,11 @@ class NewsHandler(object):
 
     def set_news_crawl_flag(self, session, id, flag=1):
         session.query(News).filter(News.id==id).update({News.comment_crawl_flag:flag})
-        session.commit()
+        session.flush()
 
     def update_comment_number(self, session, id, comment_num):
         session.query(News).filter(News.id==id).update({News.comment_num:comment_num})
-        session.commit()
+        session.flush()
 
 class CommentHandler(object):
     def insert_comment(self, session, nick, thumb_up, thumb_down, content, is_reply, has_reply, reply_comment_id, news_id):
@@ -31,7 +31,7 @@ class CommentHandler(object):
         if not t_comment:
             n_comment = Comment(nick=nick, thumb_up=thumb_up, thumb_down=thumb_down, content=content, is_reply=is_reply, has_reply=has_reply, reply_comment_id=reply_comment_id, news_id=news_id)
             session.add(n_comment)
-            session.commit()
+            session.flush()
             n_comment = session.query(Comment).filter((Comment.content==content) & (Comment.nick==nick) & (Comment.news_id==news_id)).first()
             return n_comment.id
         else:

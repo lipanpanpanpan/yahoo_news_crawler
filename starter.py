@@ -48,17 +48,15 @@ def visit_news_comment():
     try:
         l_news = NewsHandler().get_news_without_crawl_comment(session)
         for n_i in l_news:
-            session.commit()
             news_url = n_i.url
             comment_num = parse_comment_num(news_url)
             NewsHandler().update_comment_number(session, n_i.id, comment_num)
             param_dict = {'content_id':n_i.content_id, 'sortBy':'highestRated'}
             rurl = urlencode(comment_base_url, param_dict)
             if comment_num > 200 and n_i.comment_crawl_flag==0:
-                NewsHandler().set_news_crawl_flag(session, n_i.id, 1)
                 parse_comments(session, rurl, n_i.content_id, 0, n_i.id)
-                session.commit()
-                session.flush()
+                NewsHandler().set_news_crawl_flag(session, n_i.id, 1)
+            session.commit()
     except:
         traceback.print_exc()
         session.rollback()
