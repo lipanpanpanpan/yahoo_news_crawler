@@ -48,6 +48,7 @@ def visit_news_comment():
     try:
         l_news = NewsHandler().get_news_without_crawl_comment(session)
         for n_i in l_news:
+            session.commit()
             news_url = n_i.url
             comment_num = parse_comment_num(news_url)
             NewsHandler().update_comment_number(session, n_i.id, comment_num)
