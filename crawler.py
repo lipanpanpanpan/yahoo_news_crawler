@@ -2,14 +2,18 @@
 import httplib2
 import urllib
 import json
-from bs4 import BeautifulSoup
+import traceback
 import bs4
+from bs4 import BeautifulSoup
+from bussiness import *
+from orm import *
 
 mainpage_url = 'http://news.yahoo.com/us/most-popular/'
 comment_base_url = 'http://news.yahoo.com/_xhr/contentcomments/get_all/?'
 reply_base_url = 'http://news.yahoo.com/_xhr/contentcomments/get_replies/?'
 
 t_news_url = 'http://news.yahoo.com/ebola-victims-sister-says-hospital-denied-request-025725064.html'
+ch = CommentHandler()
 
 def urlencode(base, param):
     param_code = urllib.urlencode(param)
@@ -27,10 +31,13 @@ def get_news_mainpage():
 def parse_news_from_mainpage(mainpage_content):
     soup = BeautifulSoup(mainpage_content, from_encoding='utf-8')
     l_news = soup.find_all('div', {'class':'body-wrap'})
+    r_list = []
     for n in l_news:
-        print n.h3.a['href']
-        print n.p
-    print len(l_news)
+        if n.p:
+            s_url = n.h3.a['href']
+            if not s_url.startswith('http') and not s_url.startswith('/video') and not s_url.startswith('/photos') and not s_url.startswith('/blogs'):
+                r_list.append(['http://news.yahoo.com' + n.h3.a['href'], n.p.string])
+    return r_list
 
 def parse_news_title_and_content(news_url):
     head, content = httplib2.Http().request(news_url)
@@ -42,59 +49,92 @@ def parse_news_title_and_content(news_url):
     press_name = soup.find('img', {'class':'provider-img'})
     content_id = soup.find('section', {'id':'mediacontentstory'})
     c_id = content_id['data-uuid']
-    p_name = press_name['alt']
+    p_name = ''
+    if press_name:
+        p_name = press_name['alt']
+    else:
+        p_span = soup.find('span', {'class':'provider-name'})
+        if p_span:
+            p_name = p_span.string
     l_content = []
     for p in l_p:
-        if len(p.contents) > 0 and type(p.contents[0])==bs4.element.NavigableString:
-            l_content.append(p.string)
+        if len(p.contents) > 0:
+            if p.string:
+                l_content.append(p.string)
+    content = ''
     content = '\n'.join(l_content).encode('utf-8')
     news_dict = {}
-    news_dict['title'] = title
+    news_dict['title'] = title.encode('utf-8')
     news_dict['content'] = content
     news_dict['comment_num'] = int(c_num)
-    news_dict['press_name'] = press_name
+    news_dict['press_name'] = p_name.encode('utf-8')
     news_dict['content_id'] = c_id
     news_dict['time'] = news_time
     return news_dict
 
-def parse_comments(content_url, content_id, current_index):
-    head, content = httplib2.Http().request(content_url)
-    j_data = json.loads(content)
-    more_url = j_data['more']
-    soup = BeautifulSoup(j_data['commentList'])
-    comment_list = soup.find_all('li', {'data-uid':True})
-
-    for comment in comment_list:
-        comment_id = comment['data-cmt']
-        span_nickname = comment.find('span', {'class':'int profile-link'})
-        span_timestamp = comment.find('span', {'class':'comment-timestamp'})
-        p_comment_content = comment.find('p', {'class', 'comment-content'})
-        div_thumb_up = comment.find('div', {'id':'up-vote-box'})
-        div_thumb_down = comment.find('div', {'id':'down-vote-box'})
-        nickname = span_nickname.string
-        timestamp = span_timestamp.string
-        content = '\n'.join([x.string.strip() for x in p_comment_content.contents if x.string])
-        thumb_up_count = int(div_thumb_up.span.string)
-        thumb_down_count = int(div_thumb_down.span.string)
-
-        span_reply = comment.find('span', {'class':'replies int'})
-        if span_reply:
-            reply_url = urlencode(reply_base_url, {'content_id':content_id, 'comment_id':comment_id})
-            parse_reply_comment(reply_url, content_id, comment_id, 0)
-        #div_reply = comment.
-        #print nickname, timestamp, thumb_up_count, thumb_down_count, content.encode('utf-8')
-    if more_url:
-        m_soup = BeautifulSoup(more_url)
-        nextpage_url = urlencode(comment_base_url, {'content_id':content_id}) + '&'+ m_soup.li.span['data-query']
-        current_index = current_index + len(comment_list)
-        print current_index
-'''
-        parse_comments(nextpage_url, content_id, current_index)
+def parse_comment_num(news_url):
+    head, content = httplib2.Http().request(news_url)
+    soup = BeautifulSoup(content.decode('utf-8'))
+    c_num = soup.find('span', {'id':'total-comment-count'}).string
+    if c_num:
+        return int(c_num.strip())
     else:
-        return
-'''
+        return 0
+    
+def parse_comments(session, content_url, content_id, current_index, news_id):
+    print content_url
+    try:
+        head, content = httplib2.Http().request(content_url)
+        j_data = json.loads(content)
+        more_url = j_data['more']
+        soup = BeautifulSoup(j_data['commentList'])
+        comment_list = soup.find_all('li', {'data-uid':True})
 
-def parse_reply_comment(content_url, content_id, comment_id, current_index):
+        for comment in comment_list:
+            if not comment.has_key('data-cmt'):
+                commit_id=''
+            else:
+                comment_id = comment['data-cmt']
+            span_nickname = comment.find('span', {'class':'int profile-link'})
+            span_timestamp = comment.find('span', {'class':'comment-timestamp'})
+            p_comment_content = comment.find('p', {'class', 'comment-content'})
+            div_thumb_up = comment.find('div', {'id':'up-vote-box'})
+            div_thumb_down = comment.find('div', {'id':'down-vote-box'})
+            nickname = span_nickname.string
+            timestamp = span_timestamp.string
+            content = '\n'.join([x.string.strip() for x in p_comment_content.contents if x.string])
+            thumb_up_count = int(div_thumb_up.span.string)
+            thumb_down_count = int(div_thumb_down.span.string)
+
+            span_reply = comment.find('span', {'class':'replies int'})
+            has_reply = 0
+            if span_reply:
+                has_reply = 1
+            #print nickname, timestamp, thumb_up_count, thumb_down_count, content.encode('utf-8')
+            
+            try:
+                comment_id_db = ch.insert_comment(session, nickname.encode('utf-8'), thumb_up_count, thumb_down_count, content.encode('utf-8'), 0, has_reply, -1, news_id)
+                session.commit()
+                if span_reply:
+                    reply_url = urlencode(reply_base_url, {'content_id':content_id, 'comment_id':comment_id})
+                    parse_reply_comment(session, reply_url, content_id, comment_id, comment_id_db, 0, news_id)
+            except:
+                traceback.print_exc()
+            finally:
+                session.close()
+        if more_url:
+            m_soup = BeautifulSoup(more_url)
+            nextpage_url = urlencode(comment_base_url, {'content_id':content_id}) + '&'+ m_soup.li.span['data-query']
+            current_index = current_index + len(comment_list)
+            print current_index
+            parse_comments(session, nextpage_url, content_id, current_index, news_id)
+        else:
+            return
+    except:
+        traceback.print_exc()
+
+def parse_reply_comment(session, content_url, content_id, comment_id, comment_id_db, current_index, news_id):
+    print content_url
     head, content = httplib2.Http().request(content_url)
     j_data = json.loads(content)
     more_url = j_data['more']
@@ -112,17 +152,24 @@ def parse_reply_comment(content_url, content_id, comment_id, current_index):
         content = '\n'.join([x.string.strip() for x in p_comment_content.contents if x.string])
         thumb_up_count = int(div_thumb_up.span.string)
         thumb_down_count = int(div_thumb_down.span.string)
-        print content.encode('utf-8')
-
+        try:
+            ch.insert_comment(session, nickname.encode('utf-8'), thumb_up_count, thumb_down_count, content.encode('utf-8'), 1, 0, comment_id_db, news_id)
+            session.commit()
+        except:
+            traceback.print_exc()
+        finally:
+            session.close()
     if more_url:
         m_soup = BeautifulSoup(more_url)
         nextpage_url = urlencode(reply_base_url, {'content_id':content_id, 'comment_id':comment_id}) + '&'+ m_soup.li.span['data-query']
-        current_index = current_index + len(comment_list)
-        print current_index
+        current_index = current_index + len(reply_comment_list)
+        parse_reply_comment(session, nextpage_url, content_id, comment_id, comment_id_db, current_index, news_id)
+    else:
+        return
             
 if __name__=='__main__':
     yahoo_mainpage_head, yahoo_mainpage_content = get_news_mainpage()
-    #parse_news_from_mainpage(yahoo_mainpage_content)
+    parse_news_from_mainpage(yahoo_mainpage_content)
     news_dict = parse_news_title_and_content(t_news_url)
     news_c_id = news_dict['content_id']
     param_dict = {'content_id':news_c_id, 'sortBy':'highestRated'}
