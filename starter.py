@@ -45,8 +45,8 @@ def visit_news_mainpage():
         session.close()
 
 def visit_news_comment():
-    l_news = NewsHandler().get_news_without_crawl_comment(session)
     session = get_session()
+    l_news = NewsHandler().get_news_without_crawl_comment(session)
     for n_i in l_news:
         try:
             news_url = n_i.url
