@@ -101,7 +101,9 @@ def parse_comments(session, content_url, content_id, current_index, news_id):
             div_thumb_up = comment.find('div', {'id':'up-vote-box'})
             div_thumb_down = comment.find('div', {'id':'down-vote-box'})
             nickname = span_nickname.string
-            timestamp = span_timestamp.string
+            timestamp = ''
+            if span_timestamp:
+                timestamp = span_timestamp.string
             content = '\n'.join([x.string.strip() for x in p_comment_content.contents if x.string])
             thumb_up_count = int(div_thumb_up.span.string)
             thumb_down_count = int(div_thumb_down.span.string)
