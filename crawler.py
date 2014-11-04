@@ -117,7 +117,7 @@ def parse_comments(session, content_url, content_id, current_index, news_id):
             try:
                 comment_id_db = ch.insert_comment(session, nickname.encode('utf-8'), thumb_up_count, thumb_down_count, content.encode('utf-8'), 0, has_reply, -1, news_id)
                 session.flush()
-                if span_reply:
+                if span_reply and comment_id_db != -1:
                     reply_url = urlencode(reply_base_url, {'content_id':content_id, 'comment_id':comment_id})
                     parse_reply_comment(session, reply_url, content_id, comment_id, comment_id_db, 0, news_id)
             except:

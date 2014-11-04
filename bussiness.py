@@ -45,6 +45,9 @@ class CommentHandler(object):
             session.commit()
             session.flush()
             n_comment = session.query(Comment).filter((Comment.content==content) & (Comment.nick==nick) & (Comment.news_id==news_id)).first()
-            return n_comment.id
+            if n_comment:
+                return n_comment.id
+            else:
+                return -1
         else:
             return t_comment.id
