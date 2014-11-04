@@ -55,6 +55,8 @@ def visit_news_comment():
             rurl = urlencode(comment_base_url, param_dict)
             if comment_num > 200 and n_i.comment_crawl_flag==0:
                 parse_comments(session, rurl, n_i.content_id, 0, n_i.id)
+                session.commit()
+                session.flush()
                 NewsHandler().set_news_crawl_flag(session, n_i.id, 1)
     except:
         traceback.print_exc()
