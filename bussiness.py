@@ -15,15 +15,26 @@ class NewsHandler(object):
 
     def get_news_without_crawl_comment(self, session, count=20):
         news_list = session.query(News).filter(News.comment_crawl_flag==0).limit(count)
+        result_list = []
+        for item in news_list:
+            t_dict = {}
+            t_dict['id'] = item.id
+            t_dict['title'] = item.title
+            t_dict['content'] = item.content
+            t_dict['comment_num'] = item.comment_num
+            t_dict['content_id'] = item.content_id
+            t_dict['url'] = item.url
+            t_dict['comment_crawl_flag'] = item.comment_crawl_flag
+            result_list.append(t_dict)
         return news_list
 
     def set_news_crawl_flag(self, session, id, flag=1):
         session.query(News).filter(News.id==id).update({News.comment_crawl_flag:flag})
-        session.flush()
+        session.commit()
 
     def update_comment_number(self, session, id, comment_num):
         session.query(News).filter(News.id==id).update({News.comment_num:comment_num})
-        session.flush()
+        session.commit()
 
 class CommentHandler(object):
     def insert_comment(self, session, nick, thumb_up, thumb_down, content, is_reply, has_reply, reply_comment_id, news_id):
@@ -31,7 +42,7 @@ class CommentHandler(object):
         if not t_comment:
             n_comment = Comment(nick=nick, thumb_up=thumb_up, thumb_down=thumb_down, content=content, is_reply=is_reply, has_reply=has_reply, reply_comment_id=reply_comment_id, news_id=news_id)
             session.add(n_comment)
-            session.flush()
+            session.commit()
             n_comment = session.query(Comment).filter((Comment.content==content) & (Comment.nick==nick) & (Comment.news_id==news_id)).first()
             return n_comment.id
         else:

@@ -49,9 +49,9 @@ def visit_news_comment():
     session2 = get_session()
     l_news = NewsHandler().get_news_without_crawl_comment(session1)
     for n_i in l_news:
-        news_id = n_i.id
-        news_url = n_i.url
-        content_id = n_i.content_id
+        news_id = n_i['id']
+        news_url = n_i['url']
+        content_id = n_i['content_id']
         try:
             comment_num = parse_comment_num(news_url)
             NewsHandler().update_comment_number(session2, news_id, comment_num)
