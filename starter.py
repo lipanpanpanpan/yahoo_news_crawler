@@ -64,6 +64,7 @@ def visit_news_comment():
             session1.commit()
             session2.commit()
         except:
+            session2.set_news_crawl_flag(session1, news_id, 2)
             traceback.print_exc()
         finally:
             session1.close()

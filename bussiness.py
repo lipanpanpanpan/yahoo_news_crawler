@@ -1,11 +1,11 @@
 #-*- coding:utf-8 -*-
-
+import datetime
 from orm import *
 class NewsHandler(object):
     def insert_news(self, session, url, title='', summary='', content='', time_text='', comment_crawl_flag=0, press='', comment_num=0, content_id=''):
         t_news = session.query(News).filter(News.url==url).first()
         if not t_news:
-            n_news = News(url=url, title=title, summary=summary, content=content, time_text=time_text, comment_crawl_flag=comment_crawl_flag, press=press, comment_num=comment_num, content_id=content_id)
+            n_news = News(url=url, title=title, summary=summary, content=content, time_text=time_text, comment_crawl_flag=comment_crawl_flag, press=press, comment_num=comment_num, crawl_timestamp = datetime.datetime.now(), content_id=content_id)
             session.add(n_news)
             session.flush()
             n_news = session.query(News).filter(News.url==url).first()
