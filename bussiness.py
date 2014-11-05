@@ -8,13 +8,14 @@ class NewsHandler(object):
             n_news = News(url=url, title=title, summary=summary, content=content, time_text=time_text, comment_crawl_flag=comment_crawl_flag, press=press, comment_num=comment_num, crawl_timestamp = datetime.datetime.now(), content_id=content_id)
             session.add(n_news)
             session.flush()
+            session.commit()
             n_news = session.query(News).filter(News.url==url).first()
             return n_news.id
         else:
             return t_news.id
 
     def get_news_without_crawl_comment(self, session, count=20):
-        news_list = session.query(News).filter(News.comment_crawl_flag==0).limit(count)
+        news_list = session.query(News).filter((News.comment_crawl_flag==0) & (News.comment_num > 200)).limit(count)
         result_list = []
         for item in news_list:
             t_dict = {}
@@ -31,6 +32,21 @@ class NewsHandler(object):
     def set_news_crawl_flag(self, session, id, flag=1):
         session.query(News).filter(News.id==id).update({News.comment_crawl_flag:flag})
         session.commit()
+
+    def get_update_news_list(self, session):
+        news_list = session.query(News).filter(News.comment_crawl_flag==0)
+        result_list = []
+        for item in news_list:
+            t_dict = {}
+            t_dict['id'] = item.id
+            t_dict['title'] = item.title
+            t_dict['content'] = item.content
+            t_dict['comment_num'] = item.comment_num
+            t_dict['content_id'] = item.content_id
+            t_dict['url'] = item.url
+            t_dict['comment_crawl_flag'] = item.comment_crawl_flag
+            result_list.append(t_dict)
+        return result_list
 
     def update_comment_number(self, session, id, comment_num):
         session.query(News).filter(News.id==id).update({News.comment_num:comment_num})

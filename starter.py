@@ -44,34 +44,45 @@ def visit_news_mainpage():
     finally:
         session.close()
 
+def update_news_comment_number():
+    session = get_session()
+    news_id = -1
+    try:
+        l_news = NewsHandler().get_update_news_list(session)
+        for item in l_news:
+            news_url = item['url']
+            news_id = item['id']
+            comment_num = parse_comment_num(news_url)
+            NewsHandler().update_comment_number(session, news_id, comment_num)
+    except:
+        NewsHandler().set_news_crawl_flag(session, news_id, 2)
+        traceback.print_exc()
+    finally:
+        session.close()
+    
 def visit_news_comment():
-    session1 = get_session()
-    session2 = get_session()
-    l_news = NewsHandler().get_news_without_crawl_comment(session1)
+    session = get_session()
+    l_news = NewsHandler().get_news_without_crawl_comment(session)
     for n_i in l_news:
         news_id = n_i['id']
         news_url = n_i['url']
         content_id = n_i['content_id']
         comment_crawl_flag = n_i['comment_crawl_flag']
         try:
-            comment_num = parse_comment_num(news_url)
-            NewsHandler().update_comment_number(session2, news_id, comment_num)
             param_dict = {'content_id':content_id, 'sortBy':'highestRated'}
             rurl = urlencode(comment_base_url, param_dict)
-            if comment_num > 200 and comment_crawl_flag==0:
-                parse_comments(session2, rurl, content_id, 0, news_id)
-                NewsHandler().set_news_crawl_flag(session1, news_id, 1)
-            session1.commit()
-            session2.commit()
+            parse_comments(session, rurl, content_id, 0, news_id)
+            NewsHandler().set_news_crawl_flag(session, news_id, 1)
+            session.commit()
         except:
-            session2.set_news_crawl_flag(session1, news_id, 2)
+            NewsHandler().set_news_crawl_flag(session, news_id, 2)
             traceback.print_exc()
         finally:
-            session1.close()
-            session2.close()
+            session.close()
     
 if __name__=='__main__':
     while(True):
         visit_news_mainpage()
+        update_news_comment_number()
         visit_news_comment()
         sleep_random_time(ONE_MINUTE)
